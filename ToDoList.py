@@ -45,8 +45,28 @@ def apply_cors_header(response):
     response.headers['Access-Control-Allow-Headers'] = 'Content-Type'
     return response
 
+@app.route('todo-list', methods=['GET', 'POST'])
+def add_new_list():
+
+    if request.method == 'GET':
+        # make JSON from POST data (even if content type is not set correctly)
+        new_list = request.get_json(force=True)
+        print('Got new list to be added: {}'.format(new_list))
+        # create id for new list, save it and return the list with id
+        new_list['id'] = uuid.uuid4()
+        todo_lists.append(new_list)
+        return jsonify(new_list), 200
+    if request.method == 'POST':
+        # make JSON from POST data (even if content type is not set correctly)
+        new_list = request.get_json(force=True)
+        print('Got new list to be added: {}'.format(new_list))
+        # create id for new list, save it and return the list with id
+        new_list['id'] = uuid.uuid4()
+        todo_lists.append(new_list)
+        return jsonify(new_list), 200
+
 # define endpoint for getting and deleting existing todo lists
-@app.route('/list/<list_id>', methods=['GET', 'DELETE'])
+@app.route('/list/<list_id>', methods=['GET', 'DELETE', 'PATCH'])
 def handle_list(list_id):
     # find todo list depending on given list id
     list_item = None
@@ -67,23 +87,14 @@ def handle_list(list_id):
         todo_lists.remove(list_item)
         return '', 200
 
-
-# define endpoint for adding a new list
-@app.route('/list', methods=['POST'])
-def add_new_list():
-    # make JSON from POST data (even if content type is not set correctly)
-    new_list = request.get_json(force=True)
-    print('Got new list to be added: {}'.format(new_list))
-    # create id for new list, save it and return the list with id
-    new_list['id'] = uuid.uuid4()
-    todo_lists.append(new_list)
-    return jsonify(new_list), 200
-
-
 # define endpoint for getting all lists
-@app.route('/lists', methods=['GET'])
+@app.route('/entry/<entry_id>', methods=['PATCH', 'DELETE'])
 def get_all_lists():
     return jsonify(todo_lists)
+
+@app.route('/todo-list/<lsit_id>/entry', methods=['POST'])
+def add_new_entry():
+    
 
 
 if __name__ == '__main__':
