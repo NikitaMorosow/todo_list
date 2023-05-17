@@ -19,10 +19,10 @@ app = Flask(__name__)
 todo_list_1_id = '1318d3d1-d979-47e1-a225-dab1751dbe75'
 todo_list_2_id = '3062dc25-6b80-4315-bb1d-a7c86b014c65'
 todo_list_3_id = '44b02e00-03bc-451d-8d01-0c67ea866fee'
-todo_1_id = uuid.uuid4()
-todo_2_id = uuid.uuid4()
-todo_3_id = uuid.uuid4()
-todo_4_id = uuid.uuid4()
+todo_1_id = str(uuid.uuid4())
+todo_2_id = str(uuid.uuid4())
+todo_3_id = str(uuid.uuid4())
+todo_4_id = str(uuid.uuid4())
 
 # define internal data structures with example data
 todo_lists = [
@@ -45,28 +45,21 @@ def apply_cors_header(response):
     response.headers['Access-Control-Allow-Headers'] = 'Content-Type'
     return response
 
-@app.route('todo-list', methods=['GET', 'POST'])
+@app.route('/todo-list', methods=['GET', 'POST'])
 def add_new_list():
-
     if request.method == 'GET':
-        # make JSON from POST data (even if content type is not set correctly)
-        new_list = request.get_json(force=True)
-        print('Got new list to be added: {}'.format(new_list))
-        # create id for new list, save it and return the list with id
-        new_list['id'] = uuid.uuid4()
-        todo_lists.append(new_list)
-        return jsonify(new_list), 200
+        return jsonify(todo_lists), 200
     if request.method == 'POST':
         # make JSON from POST data (even if content type is not set correctly)
         new_list = request.get_json(force=True)
         print('Got new list to be added: {}'.format(new_list))
         # create id for new list, save it and return the list with id
-        new_list['id'] = uuid.uuid4()
+        new_list['id'] = str(uuid.uuid4())
         todo_lists.append(new_list)
         return jsonify(new_list), 200
 
 # define endpoint for getting and deleting existing todo lists
-@app.route('/list/<list_id>', methods=['GET', 'DELETE', 'PATCH'])
+@app.route('/todo-list/<list_id>', methods=['GET', 'DELETE', 'PATCH'])
 def handle_list(list_id):
     # find todo list depending on given list id
     list_item = None
@@ -85,16 +78,38 @@ def handle_list(list_id):
         # delete list with given id
         print('Deleting todo list...')
         todo_lists.remove(list_item)
-        return '', 200
+        return 'deleted' + jsonify(list_item), 200
+    elif request.method == 'PATCH':
+        patch_todo_list = jsonify([i for i in todos if i['list'] == list_id])
+        todo_list = request.get_json(force=True)
+        patch_todo_list['name'] = todo_list['name']
+        return jsonify(patch_todo_list), 200
 
 # define endpoint for getting all lists
 @app.route('/entry/<entry_id>', methods=['PATCH', 'DELETE'])
-def get_all_lists():
-    return jsonify(todo_lists)
+def get_all_lists(entry_id):
+    if request.method == 'PATCH':
+        patch_list_entry = jsonify([i for i in todos if i['list'] == entry_id])
+        new_list_entry = request.get_json(force=True)
+        patch_list_entry['name'] = new_list_entry['name']
+        patch_list_entry['description'] = new_list_entry['description']
+        return jsonify(patch_list_entry), 200
+    elif request.method == 'DELETE':
+        # delete list with given id
+        print('Deleting todo list...')
+        todo_lists.remove(entry_id)
+        return 'deleted' + jsonify(entry_id), 200
 
-@app.route('/todo-list/<lsit_id>/entry', methods=['POST'])
-def add_new_entry():
-    
+@app.route('/todo-list/<list_id>/entry', methods=['POST'])
+def add_new_entry(list_id):
+        # make JSON from POST data (even if content type is not set correctly)
+        new_list_entry = request.get_json(force=True)
+        print('Got new list to be added: {}'.format(new_list_entry))
+        # create id for new list, save it and return the list with id
+        new_list_entry['id'] = str(uuid.uuid4())
+        new_list_entry['list'] = list_id
+        todo_lists.append(new_list_entry)
+        return jsonify(new_list_entry), 200
 
 
 if __name__ == '__main__':
